@@ -7,28 +7,48 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { Todo } from "@/types/custom";
 import { Trash2 } from "lucide-react";
+import { useState } from "react";
 import { useFormStatus } from "react-dom";
+import { TodoOptimisticUpdate } from "./todo-list";
 
-export function TodoItem({ todo }: { todo: Todo }) {
+export function TodoItem({
+  todo,
+  optimisticUpdate
+}: {
+  todo: Todo,
+  optimisticUpdate: TodoOptimisticUpdate
+}) {
   return (
     <form>
-      <TodoCard todo={todo} />
+      <TodoCard
+        todo={todo}
+        optimisticUpdate={optimisticUpdate}
+      />
     </form>
   );
 }
 
-export function TodoCard({ todo }: { todo: Todo }) {
+export function TodoCard({
+  todo,
+  optimisticUpdate
+}: {
+  todo: Todo,
+  optimisticUpdate: TodoOptimisticUpdate
+}) {
   const { pending } = useFormStatus();
+  const [checked, setChecked] = useState(todo.is_complete);
 
   return (
     <Card className={cn("w-full", pending && "opacity-50")}>
       <CardContent className="flex items-start gap-3 p-3">
         <span className="size-10 flex items-center justify-center">
           <Checkbox
-            checked={Boolean(todo.is_complete)}
+            checked={Boolean(checked)}
             disabled={pending}
             onCheckedChange={async (val) => {
-              if (val === 'indeterminate') return
+              if (val === 'indeterminate') return;
+
+              setChecked(val);
 
               await updateTodo({ ...todo, is_complete: val });
             }}
@@ -41,6 +61,8 @@ export function TodoCard({ todo }: { todo: Todo }) {
 
         <Button
           formAction={async (data) => {
+            optimisticUpdate({ action: "delete", todo });
+
             await deleteTodo(todo.id);
           }}
           variant="ghost"
